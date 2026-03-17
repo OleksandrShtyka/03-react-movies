@@ -3,12 +3,12 @@ import { createPortal } from 'react-dom';
 import type { Movie } from '../../types/movie';
 import css from './MovieModal.module.css';
 
-interface MovieModalProps {
+interface ModalProps {
   movie: Movie;
   onClose: () => void;
 }
 
-export default function MovieModal({ movie, onClose }: MovieModalProps) {
+export default function MovieModal({ movie, onClose }: ModalProps) {
   useEffect(() => {
     document.body.style.overflow = 'hidden';
 
