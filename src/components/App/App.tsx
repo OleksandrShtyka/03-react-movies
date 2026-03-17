@@ -1,62 +1,69 @@
-import { useState } from "react";
+import { useState } from 'react';
+import type { Movie } from '../../types/movie';
+import toast, { Toaster } from 'react-hot-toast';
+import { fetchMovies } from '../../services/movieService';
+import SearchBar from '../SearchBar/SearchBar';
+import MovieGrid from '../MovieGrid/MovieGrid';
+import Loader from '../Loader/Loader';
+import ErrorMessage from '../ErrorMessage/ErrorMessage';
+import MovieModal from '../MovieModal/MovieModal';
+import css from './App.module.css';
 
-import toast, { Toaster } from "react-hot-toast";
-import SearchBar from "../SearchBar/SearchBar";
-import MovieGrid from "../MovieGrid/MovieGrid";
-import Loader from "../Loader/Loader";
-import MovieModal from "../MovieModal/MovieModal";
-import type { Movie } from "../../types/movie";
-import fetchMovies from "../../services/movieService";
-import ErrorMessage from "../ErrorMessage/ErrorMessage";
-
-function App() {
+export default function App() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isHTTPError, setHTTPError] = useState(false);
+  const [isError, setIsError] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  const handleOnSubmit = async (search: string) => {
-    setIsLoading(true);
-    setHTTPError(false);
-    setMovies([]);
+  const handleSearch = async (query: string) => {
     try {
-      const data = await fetchMovies(search);
-      const info = data.results;
+      setIsLoading(true);
+      setIsError(false);
+      setMovies([]);
+
+      const data = await fetchMovies(query);
+
       if (data.results.length === 0) {
-        toast("No movies found for your request.");
+        toast.error('No movies found for your request.');
+        setMovies([]);
+      } else {
+        setMovies(data.results);
       }
-      setMovies(info);
     } catch (error) {
-      setHTTPError(true);
-      console.log(error);
+      setIsError(true);
+      console.error('Error fetching movies:', error);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
-
-  const closeModal = () => setSelectedMovie(null);
 
   const handleSelectMovie = (movie: Movie) => {
     setSelectedMovie(movie);
   };
 
+  const handleCloseModal = () => {
+    setSelectedMovie(null);
+  };
+
   return (
     <>
-      <SearchBar onSubmit={handleOnSubmit}></SearchBar>
-      <div>
-        <Toaster />
-      </div>
+      <div className={css.app}>
+        <SearchBar onSubmit={handleSearch} />
+      
+        <Toaster position="top-center" />
 
-      {isLoading && <Loader />}
-      {isHTTPError && <ErrorMessage />}
-      {movies.length > 0 && (
-        <MovieGrid movies={movies} onSelect={handleSelectMovie} />
-      )}
-      {selectedMovie && selectedMovie !== null && (
-        <MovieModal onClose={closeModal} movie={selectedMovie}></MovieModal>
-      )}
+        {isLoading && <Loader />}
+
+        {isError && <ErrorMessage />}
+
+        {!isLoading && !isError && movies.length > 0 && (
+          <MovieGrid movies={movies} onSelect={handleSelectMovie} />
+        )}
+
+        {selectedMovie && (
+          <MovieModal movie={selectedMovie} onClose={handleCloseModal} />
+        )}
+      </div>
     </>
   );
 }
-
-export default App;
